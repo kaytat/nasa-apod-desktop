@@ -17,6 +17,6 @@ CRON_SCRIPT=$(readlink -f "$0")
 CRON_SCRIPT_DIR=$(dirname "$CRON_SCRIPT")
 echo $CRON_SCRIPT_DIR
 
-# Assume the pythong script to do the actual work is located in the same
+# Assume the python script to do the actual work is located in the same
 # directory as this cron bash script.
 $CRON_SCRIPT_DIR/nasa_apod_desktop.py

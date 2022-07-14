@@ -106,3 +106,32 @@ Author:
 David Drake 
 
 [@randomdrake](https://twitter.com/randomdrake) | [http://randomdrake.com](http://randomdrake.com) | [LinkedIn](http://www.linkedin.com/pub/david-drake/52/247/465)
+
+
+Update (7/13/2022):
+=====
+JWST is generating very cool images and I'm hoping APOD keeps updating with
+the latest and greatest from JWST. I wanted to get my desktop background
+updated with APOD and found the original github repo.
+
+Python 3
+----
+The Ubuntu machine I have didn't have python2 and so the original script did
+not work. Some minor changes were made to update to python 3, mostly around
+print().
+
+PEP 8
+----
+Cosmetic changes to conform to PEP 8 by running the changes through autopep8
+and using -a -a.
+
+Cron
+----
+Since I wanted an automated daily update, I created a cron-comptabile script
+that can be scheduled to run every day. The main purpose of this script is to
+set DBUS environment variables so that gsettings works to update the background.
+
+DOWNLOAD_PATH
+----
+I've changed the behavior here so that if this is specified, it takes precedence
+over the "download" directory.
