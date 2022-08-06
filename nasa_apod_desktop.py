@@ -76,7 +76,7 @@
 #     'zoom':     zoom image to fit the full screen
 #     https://askubuntu.com/a/914760 for a full list
 # NASA_APOD_SITE - location of the current picture of the day
-# IMAGE_SCROLL   - if true, will write also write an XML file to make the images scroll
+# IMAGE_SCROLL   - if true, will write an XML file to make the images scroll
 # IMAGE_DURATION - if IMAGE_SCROLL is enabled, this is the duration each will stay in seconds
 # SEED_IMAGES    - if > 0, it will download previous images as well to seed the list of images
 # SHOW_DEBUG     - print useful debugging information or statuses
@@ -88,14 +88,19 @@ from sys import stdout
 from PIL import Image
 from PIL import ImageFile
 from PIL import ImageOps
+import argparse
 import glob
 import random
 import logging
 import os
+import pathlib
 import re
 import urllib.request
 import subprocess
 from gi.repository import GLib
+
+NASA_APOD_SITE = 'http://apod.nasa.gov/apod/'
+
 DOWNLOAD_PATH = '/tmp/backgrounds/'
 CUSTOM_FOLDER = 'nasa-apod-backgrounds'
 RESOLUTION_TYPE = 'default'
@@ -103,7 +108,6 @@ RESOLUTION_X = 1920
 RESOLUTION_Y = 1080
 RESIZE_TYPE = 'scaled'
 PICTURE_OPTIONS = 'centered'
-NASA_APOD_SITE = 'http://apod.nasa.gov/apod/'
 IMAGE_SCROLL = True
 IMAGE_DURATION = 1200
 SEED_IMAGES = 10
@@ -437,7 +441,71 @@ def get_image_info(element, text):
     return file_url, filename, file_size
 
 
+def parse_args():
+    global DOWNLOAD_PATH
+    global CUSTOM_FOLDER
+    global RESOLUTION_TYPE
+    global RESOLUTION_X
+    global RESOLUTION_Y
+    global RESIZE_TYPE
+    global PICTURE_OPTIONS
+    global IMAGE_SCROLL
+    global IMAGE_DURATION
+    global SEED_IMAGES
+    global SHOW_DEBUG
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--download_path', type=pathlib.Path,
+                        default=DOWNLOAD_PATH,
+                        help='Where you want the file to be downloaded')
+    parser.add_argument(
+        '--custom_folder',
+        type=pathlib.Path,
+        default=CUSTOM_FOLDER,
+        help='Target folder if download path auto-detected')
+    parser.add_argument('--resolution_type', type=str, default=RESOLUTION_TYPE,
+                        help='Resolution type')
+    parser.add_argument('--resolution_x', type=int, default=RESOLUTION_X,
+                        help='Horizontal resolution of screen')
+    parser.add_argument('--resolution_y', type=int, default=RESOLUTION_Y,
+                        help='Vertical resolution of screen')
+    parser.add_argument('--resize_type', type=str, default=RESIZE_TYPE,
+                        help='Resize type')
+    parser.add_argument('--picture_options', type=str, default=PICTURE_OPTIONS,
+                        help='gnome picture-options setting')
+    parser.add_argument(
+        '--image_scroll',
+        default=IMAGE_SCROLL,
+        action=argparse.BooleanOptionalAction,
+        help='If true, will write an XML file to make the images scroll')
+    parser.add_argument('--image_duration', type=int, default=IMAGE_DURATION,
+                        help='Duration in seconds between image scrolls')
+    parser.add_argument('--seed_images', type=int, default=SEED_IMAGES,
+                        help='Number of seed images')
+    parser.add_argument(
+        '--debug',
+        default=SHOW_DEBUG,
+        action=argparse.BooleanOptionalAction,
+        help='Print useful debugging information or statuses')
+
+    args = parser.parse_args()
+
+    DOWNLOAD_PATH = str(args.download_path)
+    CUSTOM_FOLDER = str(args.custom_folder)
+    RESOLUTION_TYPE = args.resolution_type
+    RESOLUTION_X = args.resolution_x
+    RESOLUTION_Y = args.resolution_y
+    RESIZE_TYPE = args.resize_type
+    PICTURE_OPTIONS = args.picture_options
+    IMAGE_SCROLL = args.image_scroll
+    IMAGE_DURATION = args.image_duration
+    SEED_IMAGES = args.seed_images
+    SHOW_DEBUG = args.debug
+
+
 if __name__ == '__main__':
+    parse_args()
+
     # Our program
     if SHOW_DEBUG:
         logging.basicConfig(level=logging.INFO)
