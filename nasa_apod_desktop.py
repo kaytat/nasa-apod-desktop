@@ -339,9 +339,9 @@ def create_desktop_background_scoll(filename):
         while seed_images_left > 0:
             days_back += 1
             logging.info(
-                    "Downloading seed image (" +
-                    str(seed_images_left) +
-                    " left):")
+                "Downloading seed image (" +
+                str(seed_images_left) +
+                " left):")
             day_to_try = datetime.now() - timedelta(days=days_back)
 
             # Filenames look like /apYYMMDD.html
