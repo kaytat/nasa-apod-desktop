@@ -66,6 +66,15 @@
 #                  automatically determined
 # RESOLUTION_Y   - vertical resolution if RESOLUTION_TYPE is not default or cannot be
 #                  automatically determined
+# RESIZE_TYPE    -
+#     'none':    don't resize the image
+#     'stretch': stretch and scale image to resolution ignoring the aspect ratio
+#     'scale':   scale image maintaining aspect ratio
+# PICTURE_OPTIONS - set the gnome picture-options setting
+#     'reset':    reset the options
+#     'centered': center and fit the full image
+#     'zoom':     zoom image to fit the full screen
+#     https://askubuntu.com/a/914760 for a full list
 # NASA_APOD_SITE - location of the current picture of the day
 # IMAGE_SCROLL   - if true, will write also write an XML file to make the images scroll
 # IMAGE_DURATION - if IMAGE_SCROLL is enabled, this is the duration each will stay in seconds
@@ -77,6 +86,8 @@ from lxml import etree
 from sys import exit
 from sys import stdout
 from PIL import Image
+from PIL import ImageFile
+from PIL import ImageOps
 import glob
 import random
 import os
@@ -86,9 +97,11 @@ import subprocess
 from gi.repository import GLib
 DOWNLOAD_PATH = '/tmp/backgrounds/'
 CUSTOM_FOLDER = 'nasa-apod-backgrounds'
-RESOLUTION_TYPE = 'stretch'
-RESOLUTION_X = 1024
-RESOLUTION_Y = 768
+RESOLUTION_TYPE = 'default'
+RESOLUTION_X = 1920
+RESOLUTION_Y = 1080
+RESIZE_TYPE = 'scaled'
+PICTURE_OPTIONS = 'centered'
 NASA_APOD_SITE = 'http://apod.nasa.gov/apod/'
 IMAGE_SCROLL = True
 IMAGE_DURATION = 1200
@@ -101,6 +114,9 @@ SHOW_DEBUG = True
 # is set to 'stretch' we will grab it from the current value. Default will simply use
 # what was set for the default resolutions.
 def find_resolution():
+    if SHOW_DEBUG:
+        print("RESOLUTION_TYPE", RESOLUTION_TYPE)
+
     if RESOLUTION_TYPE == 'default':
         if SHOW_DEBUG:
             print(
@@ -248,7 +264,14 @@ def get_image(text):
 # Resizes the image to the provided dimensions
 def resize_image(filename):
     if SHOW_DEBUG:
-        print("Opening local image")
+        print("RESIZE_TYPE:", RESIZE_TYPE)
+
+    if RESIZE_TYPE == 'none':
+        print("Image resize skipped")
+        return
+
+    if SHOW_DEBUG:
+        print("Opening local image:", filename)
 
     image = Image.open(filename)
     current_x, current_y = image.size
@@ -256,17 +279,31 @@ def resize_image(filename):
         if SHOW_DEBUG:
             print("Images are currently equal in size. No need to scale.")
     else:
-        if SHOW_DEBUG:
-            print(
-                "Resizing the image from",
-                image.size[0],
-                "x",
-                image.size[1],
-                "to",
-                RESOLUTION_X,
-                "x",
-                RESOLUTION_Y)
-        image = image.resize((RESOLUTION_X, RESOLUTION_Y), Image.ANTIALIAS)
+        if RESIZE_TYPE == 'stretch':
+            if SHOW_DEBUG:
+                print(
+                    "stretch: resizing the image from",
+                    image.size[0],
+                    "x",
+                    image.size[1],
+                    "to",
+                    RESOLUTION_X,
+                    "x",
+                    RESOLUTION_Y)
+            image = image.resize((RESOLUTION_X, RESOLUTION_Y), Image.ANTIALIAS)
+        else:
+            if SHOW_DEBUG:
+                print(
+                    "scale: resizing the image from",
+                    image.size[0],
+                    "x",
+                    image.size[1],
+                    "to fit inside",
+                    RESOLUTION_X,
+                    "x",
+                    RESOLUTION_Y,
+                    "maintaining aspect ratio")
+            image = ImageOps.contain(image, (RESOLUTION_X, RESOLUTION_Y))
 
         if SHOW_DEBUG:
             print("Saving the image to", filename)
@@ -277,9 +314,22 @@ def resize_image(filename):
 # Sets the new image as the wallpaper
 def set_gnome_wallpaper(file_path):
     if SHOW_DEBUG:
-        print("Setting the wallpaper")
+        print("PICTURE_OPTIONS:", PICTURE_OPTIONS)
+
+    if PICTURE_OPTIONS == 'reset':
+        command = "gsettings reset org.gnome.desktop.background picture-options"
+    else:
+        command = "gsettings set org.gnome.desktop.background picture-options " + PICTURE_OPTIONS
+    status, output = subprocess.getstatusoutput(command)
+    if SHOW_DEBUG:
+        print(command, ":", status, ":", output)
+
+    if SHOW_DEBUG:
+        print("Setting the image", file_path)
     command = "gsettings set org.gnome.desktop.background picture-uri file://" + file_path
     status, output = subprocess.getstatusoutput(command)
+    if SHOW_DEBUG:
+        print(command, ":", status, ":", output)
     return status
 
 
