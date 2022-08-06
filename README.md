@@ -108,7 +108,7 @@ David Drake
 [@randomdrake](https://twitter.com/randomdrake) | [http://randomdrake.com](http://randomdrake.com) | [LinkedIn](http://www.linkedin.com/pub/david-drake/52/247/465)
 
 
-Update (7/13/2022):
+Update (8/6/2022):
 =====
 JWST is generating very cool images and I'm hoping APOD keeps updating with
 the latest and greatest from JWST. I wanted to get my desktop background
@@ -135,3 +135,15 @@ DOWNLOAD_PATH
 ----
 I've changed the behavior here so that if this is specified, it takes precedence
 over the "download" directory.
+
+Additional Options
+----
+* __RESIZE\_TYPE__
+    * 'none': don't resize the image
+    * 'stretch': stretch and scale image to resolution ignoring the aspect ratio
+    * 'scale': scale image maintaining aspect ratio
+* __PICTURE\_OPTIONS__ - set the gnome picture-options setting
+    * 'reset': reset the options
+    * 'centered': center and fit the full image
+    * 'zoom': zoom image to fit the full screen
+    * https://askubuntu.com/a/914760 for a full list
