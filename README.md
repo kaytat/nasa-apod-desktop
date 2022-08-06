@@ -147,3 +147,44 @@ Additional Options
     * 'centered': center and fit the full image
     * 'zoom': zoom image to fit the full screen
     * https://askubuntu.com/a/914760 for a full list
+
+Command-line options
+----
+```
+usage: nasa_apod_desktop.py [-h] [--download_path DOWNLOAD_PATH]
+                            [--custom_folder CUSTOM_FOLDER]
+                            [--resolution_type RESOLUTION_TYPE]
+                            [--resolution_x RESOLUTION_X]
+                            [--resolution_y RESOLUTION_Y]
+                            [--resize_type RESIZE_TYPE]
+                            [--picture_options PICTURE_OPTIONS]
+                            [--image_scroll | --no-image_scroll]
+                            [--image_duration IMAGE_DURATION]
+                            [--seed_images SEED_IMAGES] [--debug | --no-debug]
+
+options:
+  -h, --help            show this help message and exit
+  --download_path DOWNLOAD_PATH
+                        Where you want the file to be downloaded
+  --custom_folder CUSTOM_FOLDER
+                        Target folder if download path auto-detected
+  --resolution_type RESOLUTION_TYPE
+                        Resolution type
+  --resolution_x RESOLUTION_X
+                        Horizontal resolution of screen
+  --resolution_y RESOLUTION_Y
+                        Vertical resolution of screen
+  --resize_type RESIZE_TYPE
+                        Resize type
+  --picture_options PICTURE_OPTIONS
+                        gnome picture-options setting
+  --image_scroll, --no-image_scroll
+                        If true, will write an XML file to make the images
+                        scroll (default: True)
+  --image_duration IMAGE_DURATION
+                        Duration in seconds between image scrolls
+  --seed_images SEED_IMAGES
+                        Number of seed images
+  --debug, --no-debug   Print useful debugging information or statuses
+                        (default: True)
+```
