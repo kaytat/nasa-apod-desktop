@@ -61,7 +61,7 @@ While the script will detect as much as possible and has safe defaults, you may 
 
 * __DOWNLOAD\_PATH__ - where you want the file to be downloaded. Will be auto-detected if not set.
 * __CUSTOM\_FOLDER__ - if we detect your download folder, this will be the target folder in there.
-* __RESOUTION\_TYPE__ -   
+* __RESOLUTION\_TYPE__ -
     'stretch': single monitor or the combined resolution of your available monitors  
     'largest': largest resolution of your available monitors      
     'default': use the default resolution that is set
