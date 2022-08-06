@@ -90,6 +90,7 @@ from PIL import ImageFile
 from PIL import ImageOps
 import glob
 import random
+import logging
 import os
 import re
 import urllib.request
@@ -114,21 +115,18 @@ SHOW_DEBUG = True
 # is set to 'stretch' we will grab it from the current value. Default will simply use
 # what was set for the default resolutions.
 def find_resolution():
-    if SHOW_DEBUG:
-        print("RESOLUTION_TYPE", RESOLUTION_TYPE)
+    logging.info("RESOLUTION_TYPE:" + RESOLUTION_TYPE)
 
     if RESOLUTION_TYPE == 'default':
-        if SHOW_DEBUG:
-            print(
-                "Using default resolution of {}x{}".format(
-                    RESOLUTION_X, RESOLUTION_Y))
+        logging.info(
+            "Using default resolution of {}x{}".format(
+                RESOLUTION_X, RESOLUTION_Y))
         return RESOLUTION_X, RESOLUTION_Y
 
     res_x = 0
     res_y = 0
 
-    if SHOW_DEBUG:
-        print("Attempting to determine the current resolution.")
+    logging.info("Attempting to determine the current resolution.")
     if RESOLUTION_TYPE == 'largest':
         regex_search = 'connected'
     else:
@@ -150,26 +148,25 @@ def find_resolution():
                 if int(match.group(1)) * int(match.group(2)) > largest:
                     res_x = match.group(1)
                     res_y = match.group(2)
-        elif SHOW_DEBUG:
-            print("Could not determine largest screen resolution.")
+        else:
+            logging.warning("Could not determine largest screen resolution.")
     else:
         reg = re.search(".* current (.*?) x (.*?),.*", output)
         if reg:
             res_x = reg.group(1)
             res_y = reg.group(2)
-        elif SHOW_DEBUG:
-            print("Could not determine current screen resolution.")
+        else:
+            logging.warning("Could not determine current screen resolution.")
 
     # If we couldn't find anything automatically use what was set for the
     # defaults
     if res_x == 0 or res_y == 0:
         res_x = RESOLUTION_X
         res_y = RESOLUTION_Y
-        if SHOW_DEBUG:
-            print("Could not determine resolution automatically. Using defaults.")
+        logging.warning(
+            "Could not determine resolution automatically. Using defaults.")
 
-    if SHOW_DEBUG:
-        print("Using detected resolution of {}x{}".format(res_x, res_y))
+    logging.warning("Using detected resolution of {}x{}".format(res_x, res_y))
 
     return int(res_x), int(res_y)
 
@@ -179,8 +176,7 @@ def find_resolution():
 # http://askubuntu.com/questions/137896/how-to-get-the-user-downloads-folder-location-with-python
 def set_download_folder():
     if DOWNLOAD_PATH:
-        if SHOW_DEBUG:
-            print("Using default path for downloads:", DOWNLOAD_PATH)
+        logging.info("Using default path for downloads:" + DOWNLOAD_PATH)
         return DOWNLOAD_PATH
 
     downloads_dir = GLib.get_user_special_dir(
@@ -188,8 +184,7 @@ def set_download_folder():
     if downloads_dir:
         # Add any custom folder
         new_path = os.path.join(downloads_dir, CUSTOM_FOLDER)
-        if SHOW_DEBUG:
-            print("Using automatically detected path:", new_path)
+        logging.info("Using automatically detected path:" + new_path)
         return new_path
 
     raise RuntimeError("Unable to determine download folder")
@@ -197,29 +192,25 @@ def set_download_folder():
 
 # Download HTML of the site
 def download_site(url):
-    if SHOW_DEBUG:
-        print("Downloading contents of the site to find the image name")
+    logging.info("Downloading contents of the site to find the image name")
     req = urllib.request.Request(url)
     try:
         reply = urllib.request.urlopen(req).read()
     except urllib.error.HTTPError as error:
-        if SHOW_DEBUG:
-            print("Error downloading", url, "-", str(error.code))
+        logging.warning("Error downloading" + url + "-" + str(error.code))
         reply = "Error: " + str(error.code)
     return reply
 
 
 # Finds the image URL and saves it
 def get_image(text):
-    if SHOW_DEBUG:
-        print("Grabbing the image URL")
+    logging.info("Grabbing the image URL")
     file_url, filename, file_size = get_image_info('a href', text)
     # If file_url is None, the today's picture might be a video
     if file_url is None:
         return None
 
-    if SHOW_DEBUG:
-        print("Found name of image:", filename)
+    logging.info("Found name of image:" + filename)
 
     save_to = os.path.join(
         DOWNLOAD_PATH,
@@ -229,107 +220,81 @@ def get_image(text):
     if not os.path.isfile(save_to):
         # If the response body is less than 500 bytes, something went wrong
         if file_size < 500:
-            print(
+            logging.warning(
                 "Response less than 500 bytes, probably an error\nAttempting to just grab image source")
             file_url, filename, file_size = get_image_info('img src', text)
             # If file_url is None, the today's picture might be a video
             if file_url is None:
                 return None
-            print("Found name of image:", filename)
+            logging.info("Found name of image:" + filename)
             if file_size < 500:
                 # Give up
-                if SHOW_DEBUG:
-                    print("Could not find image to download")
+                logging.warning("Could not find image to download")
                 exit()
 
-        if SHOW_DEBUG:
-            print("Retrieving image")
-            urllib.request.urlretrieve(
-                file_url, save_to, print_download_status)
+        logging.info("Retrieving image")
+        urllib.request.urlretrieve(
+            file_url, save_to, print_download_status)
 
-            # Adding additional padding to ensure entire line
-            if SHOW_DEBUG:
-                print(
-                    "\rDone downloading",
-                    human_readable_size(file_size),
-                    "       ")
-        else:
-            urllib.request.urlretrieve(file_url, save_to)
-    elif SHOW_DEBUG:
-        print("File exists, moving on")
+        logging.info("\nDone downloading " + human_readable_size(file_size))
+    else:
+        logging.info("File exists, moving on")
 
     return save_to
 
 
 # Resizes the image to the provided dimensions
 def resize_image(filename):
-    if SHOW_DEBUG:
-        print("RESIZE_TYPE:", RESIZE_TYPE)
+    logging.info("RESIZE_TYPE:" + RESIZE_TYPE)
 
     if RESIZE_TYPE == 'none':
-        print("Image resize skipped")
+        logging.info("Image resize skipped")
         return
 
-    if SHOW_DEBUG:
-        print("Opening local image:", filename)
+    logging.info("Opening local image:" + filename)
 
     image = Image.open(filename)
     current_x, current_y = image.size
     if (current_x, current_y) == (RESOLUTION_X, RESOLUTION_Y):
-        if SHOW_DEBUG:
-            print("Images are currently equal in size. No need to scale.")
+        logging.info("Images are currently equal in size. No need to scale.")
     else:
         if RESIZE_TYPE == 'stretch':
-            if SHOW_DEBUG:
-                print(
-                    "stretch: resizing the image from",
-                    image.size[0],
-                    "x",
-                    image.size[1],
-                    "to",
-                    RESOLUTION_X,
-                    "x",
-                    RESOLUTION_Y)
+            logging.info(
+                "stretch: resizing the image from %sx%s to %sx%s",
+                image.size[0],
+                image.size[1],
+                RESOLUTION_X,
+                RESOLUTION_Y)
             image = image.resize((RESOLUTION_X, RESOLUTION_Y), Image.ANTIALIAS)
         else:
-            if SHOW_DEBUG:
-                print(
-                    "scale: resizing the image from",
-                    image.size[0],
-                    "x",
-                    image.size[1],
-                    "to fit inside",
-                    RESOLUTION_X,
-                    "x",
-                    RESOLUTION_Y,
-                    "maintaining aspect ratio")
+            logging.info(
+                "scale: resizing the image from %sx%s to fit inside %sx%s maintaining aspect ratio",
+                image.size[0],
+                image.size[1],
+                RESOLUTION_X,
+                RESOLUTION_Y)
             image = ImageOps.contain(image, (RESOLUTION_X, RESOLUTION_Y))
 
-        if SHOW_DEBUG:
-            print("Saving the image to", filename)
+        logging.info("Saving the image to" + filename)
         fhandle = open(filename, 'wb')
         image.save(fhandle, 'PNG')
 
 
 # Sets the new image as the wallpaper
 def set_gnome_wallpaper(file_path):
-    if SHOW_DEBUG:
-        print("PICTURE_OPTIONS:", PICTURE_OPTIONS)
+    logging.info("PICTURE_OPTIONS:" + PICTURE_OPTIONS)
 
     if PICTURE_OPTIONS == 'reset':
         command = "gsettings reset org.gnome.desktop.background picture-options"
     else:
         command = "gsettings set org.gnome.desktop.background picture-options " + PICTURE_OPTIONS
     status, output = subprocess.getstatusoutput(command)
-    if SHOW_DEBUG:
-        print(command, ":", status, ":", output)
+    logging.info(command + ":" + str(status) + ":" + output)
 
-    if SHOW_DEBUG:
-        print("Setting the image", file_path)
+    logging.info("Setting the image" + file_path)
     command = "gsettings set org.gnome.desktop.background picture-uri file://" + file_path
     status, output = subprocess.getstatusoutput(command)
-    if SHOW_DEBUG:
-        print(command, ":", status, ":", output)
+    logging.info(command + ":" + str(status) + ":" + output)
     return status
 
 
@@ -354,8 +319,7 @@ def create_desktop_background_scoll(filename):
     if not IMAGE_SCROLL:
         return filename
 
-    if SHOW_DEBUG:
-        print("Creating XML file for desktop background switching.")
+    logging.info("Creating XML file for desktop background switching.")
 
     filename = DOWNLOAD_PATH + '/nasa_apod_desktop_backgrounds.xml'
 
@@ -369,14 +333,12 @@ def create_desktop_background_scoll(filename):
     if num_images < SEED_IMAGES:
         # Let's seed some images
         # Start with yesterday and continue going back until we have enough
-        if SHOW_DEBUG:
-            print("Downloading some seed images as well")
+        logging.info("Downloading some seed images as well")
         days_back = 0
         seed_images_left = SEED_IMAGES
         while seed_images_left > 0:
             days_back += 1
-            if SHOW_DEBUG:
-                print(
+            logging.info(
                     "Downloading seed image (" +
                     str(seed_images_left) +
                     " left):")
@@ -402,8 +364,7 @@ def create_desktop_background_scoll(filename):
             # Add this to our list of images
             images.append(seed_filename)
             seed_images_left -= 1
-        if SHOW_DEBUG:
-            print("Done downloading seed images")
+        logging.info("Done downloading seed images")
 
     # Get our images in a random order so we get a new order every time we get
     # a new file
@@ -462,13 +423,11 @@ def get_image_info(element, text):
             # Relative path, handle it
             file_url = NASA_APOD_SITE + reg.group(1)
     else:
-        if SHOW_DEBUG:
-            print("Could not find an image. May be a video today.")
+        logging.info("Could not find an image. May be a video today.")
         return None, None, None
 
     # Create our handle for our remote file
-    if SHOW_DEBUG:
-        print("Opening remote URL")
+    logging.info("Opening remote URL")
 
     remote_file = urllib.request.urlopen(file_url)
 
@@ -481,7 +440,9 @@ def get_image_info(element, text):
 if __name__ == '__main__':
     # Our program
     if SHOW_DEBUG:
-        print("Starting")
+        logging.basicConfig(level=logging.INFO)
+
+    logging.info("Starting")
 
     # Find desktop resolution
     RESOLUTION_X, RESOLUTION_Y = find_resolution()
@@ -496,8 +457,7 @@ if __name__ == '__main__':
     # Grab the HTML contents of the file
     site_contents = download_site(NASA_APOD_SITE)
     if site_contents == "error":
-        if SHOW_DEBUG:
-            print("Could not contact site.")
+        logging.error("Could not contact site.")
         exit()
 
     # Download the image
@@ -511,11 +471,9 @@ if __name__ == '__main__':
     # If the script was unable todays image and IMAGE_SCROLL is set to False,
     # the script exits
     if filename is None:
-        if SHOW_DEBUG:
-            print("Today's image could not be downloaded.")
+        logging.warning("Today's image could not be downloaded.")
         exit()
 
     # Set the wallpaper
     status = set_gnome_wallpaper(filename)
-    if SHOW_DEBUG:
-        print("Finished!")
+    logging.info("Finished!")
